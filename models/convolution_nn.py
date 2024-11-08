@@ -26,11 +26,11 @@ class ConvolutionNeuralNetwork(nn.Module):
         self.B7 = nn.BatchNorm2d(512)
         self.layer8 = nn.Conv2d(512, 512, 3, padding=1, stride=1)
         self.B8 = nn.BatchNorm2d(512)
-        # self.fc1 = nn.Linear(512, 4096)
-        # self.D1 = nn.Dropout(0.5)
-        # self.fc2 = nn.Linear(4096, 4096)
-        # self.D2 = nn.Dropout(0.5)
-        # self.fc3 = nn.Linear(4096, 10)
+        self.fc1 = nn.Linear(512 * 7 * 7, 4096)
+        self.D1 = nn.Dropout(0.5)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.D2 = nn.Dropout(0.5)
+        self.fc3 = nn.Linear(4096, 10)
 
     def forward(self, x):
         x = self.B1(self.max_pool(F.leaky_relu(self.layer1(x))))
@@ -41,17 +41,18 @@ class ConvolutionNeuralNetwork(nn.Module):
         x = self.B6(self.max_pool(F.leaky_relu(self.layer6(x))))
         x = self.B7((F.leaky_relu(self.layer7(x))))
         x = self.B8(self.max_pool(F.leaky_relu(self.layer8(x))))
-        # x = x.view(x.size(0), -1)
-        # x = self.D1(F.relu(self.fc1(x)))
-        # x = self.D2(F.relu(self.fc2(x)))
 
-        # return self.fc3(x)
-        return x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)
+
+        x = self.D1(F.relu(self.fc1(x)))
+        x = self.D2(F.relu(self.fc2(x)))
+
+        return self.fc3(x)
 
     def fit(self, train_loader):
         self.to(self.device)
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.parameters(), lr=0.01)
+        optimizer = optim.SGD(self.parameters(), lr=0.01, momentum=0.9)
         best_accuracy = 0
 
         # Create train-validation split (90-10)
@@ -63,23 +64,22 @@ class ConvolutionNeuralNetwork(nn.Module):
 
         # Split the data
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, pin_memory=True,
-                                                   num_workers=4)
+                                                   num_workers=2)
         validation_loader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, pin_memory=True,
-                                                        num_workers=4)
+                                                        num_workers=2)
 
         for epoch in range(self.num_epochs):
             self.train()
-            running_loss = 0
-
+            running_loss = 0.0
             load_size = len(train_loader)
-            instance_tracker = 0
-            # Training phase
-            for instances, labels in train_loader:
+            instance_tracker = 1
+
+            for images, labels in train_loader:
                 print(f"Training {instance_tracker}/{load_size}")
                 instance_tracker += 1
-                instances, labels = instances.to(self.device), labels.to(self.device)
+                images, labels = images.to(self.device), labels.to(self.device)
                 optimizer.zero_grad()
-                outputs = self(instances)
+                outputs = self(images)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -92,7 +92,7 @@ class ConvolutionNeuralNetwork(nn.Module):
             if validation_accuracy > best_accuracy:
                 best_accuracy = validation_accuracy
                 # Optionally save the model
-                # torch.save(self.state_dict(), 'best_model.pth')
+                torch.save(self.state_dict(), 'bestCNN_model.pth')
 
         return self
 
@@ -110,10 +110,16 @@ class ConvolutionNeuralNetwork(nn.Module):
         accuracy = correct / total
         return accuracy
 
-    def predict(self, X):
+    def predict(self, data_loader):
+        self.to(self.device)
         self.eval()
-        X = X.to(self.device)
+        predictions = []
+
         with torch.no_grad():
-            outputs = self(X)
-            _, predicted = torch.max(outputs.data, 1)
-            return predicted
+            for inputs, _ in data_loader:
+                inputs = inputs.to(self.device)
+                outputs = self(inputs)
+                _, predicted = torch.max(outputs, 1)
+                predictions.extend(predicted.cpu().numpy())
+
+        return predictions
