@@ -45,22 +45,22 @@ if __name__ == '__main__':
     # model = DecisionTree(50)
     # test_pred = model.fit(train_feature, train_labels)
 
-    model = MultiLayerPerceptron(device=device, num_epochs=1)
+    model = MultiLayerPerceptron(device=device, num_epochs=10)
     if os.path.exists('bestMLP_model.pth'):
         model.load_state_dict(torch.load('bestMLP_model.pth', weights_only=True))
     else:
         model.fit(train_feature, train_labels)
-    test_pred = model.predict(train_feature, train_labels)
+    test_pred = model.predict(test_features, test_labels)
 
     accuracy = accuracy_score(test_labels, test_pred)
     print(f"SK implementation accuracy: {accuracy * 100:.2f}%")
 
-    model = ConvolutionNeuralNetwork(device=device, num_epochs=1)
+    model = ConvolutionNeuralNetwork(device=device, num_epochs=10)
     if os.path.exists('bestCNN_model.pth'):
         model.load_state_dict(torch.load('bestCNN_model.pth', weights_only=True))
     else:
-        model.fit(train_loader)
-    test_pred = model.predict(test_loader)
-    
+        model.fit(train_feature, train_labels)
+    test_pred = model.predict(test_features, test_labels)
+
     accuracy = accuracy_score(test_labels, test_pred)
     print(f"SK implementation accuracy: {accuracy * 100:.2f}%")

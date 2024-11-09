@@ -59,7 +59,6 @@ def extract_features(data_loader, model, device):
     return features, labels
 
 def load_data(batch_size, device):
-    # Use cuda if available, otherwise use mps or cpu
     print(f"Using device: {device}")
     print("Loading CIFAR-10 dataset...")
     train_loader, test_loader = load_cifar10(batch_size)
