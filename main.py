@@ -34,16 +34,27 @@ if __name__ == '__main__':
     model = GaussianNaiveBayes()
     test_pred = model.fit(train_feature, train_labels).predict(test_features)
     accuracy = accuracy_score(test_labels, test_pred)
-    print(f"My implementation accuracy: {accuracy * 100:.2f}%")
+    print(f"My GaussianNB's implementation accuracy: {accuracy * 100:.2f}%")
 
     # Train and evaluate using sklearn's Gaussian Naive Bayes implementation
     model = GaussianNB()
     test_pred = model.fit(train_feature, train_labels).predict(test_features)
     accuracy = accuracy_score(test_labels, test_pred)
-    print(f"SK implementation accuracy: {accuracy * 100:.2f}%")
+    print(f"SK GaussianNB's implementation accuracy: {accuracy * 100:.2f}%")
 
-    # model = DecisionTree(50)
-    # test_pred = model.fit(train_feature, train_labels)
+    model = DecisionTree(50)
+    if os.path.exists('decision_tree_model.pkl'):
+        with open("decision_tree_model.pkl", "rb") as file:
+            model = pickle.load(file)
+    else:
+        model.fit(train_feature, train_labels)
+        with open("decision_tree_model.pkl", "wb") as file:
+            pickle.dump(model, file)
+
+    test_pred = model.predict(test_features)
+
+    accuracy = accuracy_score(test_labels, test_pred)
+    print(f"My Decision Tree's implementation accuracy: {accuracy * 100:.2f}%")
 
     model = MultiLayerPerceptron(device=device, num_epochs=10)
     if os.path.exists('bestMLP_model.pth'):
@@ -53,7 +64,7 @@ if __name__ == '__main__':
     test_pred = model.predict(test_features, test_labels)
 
     accuracy = accuracy_score(test_labels, test_pred)
-    print(f"SK implementation accuracy: {accuracy * 100:.2f}%")
+    print(f"My MLP's implementation accuracy: {accuracy * 100:.2f}%")
 
     model = ConvolutionNeuralNetwork(device=device, num_epochs=10)
     if os.path.exists('bestCNN_model.pth'):
@@ -63,4 +74,4 @@ if __name__ == '__main__':
     test_pred = model.predict(test_features, test_labels)
 
     accuracy = accuracy_score(test_labels, test_pred)
-    print(f"SK implementation accuracy: {accuracy * 100:.2f}%")
+    print(f"My CNN's implementation accuracy: {accuracy * 100:.2f}%")
