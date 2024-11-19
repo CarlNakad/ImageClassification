@@ -1,4 +1,7 @@
+import os
+import pickle
 import numpy as np
+
 class TreeNode:
     def __init__(self, features=None, threshold=None, left=None, right=None, label=None, gini=None):
         self.feature = features
@@ -16,9 +19,10 @@ class TreeNode:
         return 1 - np.sum(probabilities ** 2)
 
 class DecisionTree:
-    def __init__(self, max_depth=None):
+    def __init__(self, max_depth=None, file_path=None):
         self.max_depth = max_depth
         self.tree = None
+        self.file_path = file_path
 
     def majority_class(self, D):
         labels, counts = np.unique(D[:, -1], return_counts=True)
@@ -31,9 +35,8 @@ class DecisionTree:
 
         for feature in range(num_features):
             values = np.unique(D[:, feature])
-            value_count = 0
+            value_count = 1
             for value in values:
-                print(f"Splitting on feature {feature}/{num_features} at value {value_count}/{len(values)}")
                 value_count += 1
                 d_left = D[D[:, feature] < value]
                 d_right = D[D[:, feature] >= value]
@@ -70,8 +73,16 @@ class DecisionTree:
         return TreeNode(features=best_feature, threshold=best_threshold, left=left_subtree, right=right_subtree)
 
     def fit(self, X, y):
-        D = np.column_stack((X, y))
-        self.tree = self.build_tree(D, depth=0)
+        if os.path.exists(self.file_path):
+            with open(self.file_path, "rb") as file:
+                self.tree = pickle.load(file).tree
+        else:
+            D = np.column_stack((X, y))
+            self.tree = self.build_tree(D, depth=0)
+            with open(self.file_path, "wb") as file:
+                pickle.dump(self, file)
+
+        return self
 
     def predict_one(self, x, node):
         if node.label is not None:
