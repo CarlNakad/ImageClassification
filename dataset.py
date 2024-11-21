@@ -7,6 +7,13 @@ import pickle
 
 
 def filter_dataset(dataset, total_samples):
+    """
+    Filter the dataset to have a fixed number of samples per class
+
+    :param dataset: Dataset to filter
+    :param total_samples: Number of samples per class
+    :return: Filtered dataset
+    """
     num_classes = 10
     class_counts = {i: 0 for i in range(num_classes)}
     indices = []
@@ -19,6 +26,13 @@ def filter_dataset(dataset, total_samples):
     return torch.utils.data.Subset(dataset, indices)
 
 def load_cifar10(transform, batch_size):
+    """
+    Load the CIFAR-10 dataset with the given transform and batch size
+
+    :param transform: Set of transformations to apply to the images
+    :param batch_size: Batch size for the DataLoader
+    :return: Train and test DataLoaders
+    """
     # Load the full CIFAR-10 dataset
     full_train_set = torchvision.datasets.CIFAR10(root='./data', train=True,
                                                  download=True, transform=transform)
@@ -38,21 +52,42 @@ def load_cifar10(transform, batch_size):
     return train_loader, test_loader
 
 def extract_features(data_loader, model, device):
+    """
+    Extract features from the given data loader using the given model
+
+    :param data_loader: DataLoader to extract features from
+    :param model: Model to use for feature extraction
+    :param device: Device to use for the model
+    :return: Extracted features and labels
+    """
     all_features = []
     all_labels = []
     model.to(device)
+
+    # torch.no_grad() disables gradient calculation, saving memory
     with torch.no_grad():
+        # Iterate over the data loader
         for images, labels in data_loader:
             images = images.to(device)
             outputs = model(images)
             outputs = outputs.view(outputs.size(0), -1)
             all_features.append(outputs.cpu())
             all_labels.append(labels)
+    # Concatenate the features and labels
     features = torch.cat(all_features, dim=0)
     labels = torch.cat(all_labels, dim=0)
+
     return features, labels
 
 def load_data(batch_size, device):
+    """
+    Load the CIFAR-10 dataset, extract features using ResNet-18, and apply PCA to reduce dimensionality
+
+    :param batch_size: The batch size for the DataLoader
+    :param device: The device to use for the model
+    :return: Train and test features and labels
+    """
+
     # Resize and Normalize for ResNet-18
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -83,6 +118,15 @@ def load_data(batch_size, device):
 
 
 def load_or_cache_data(cache_path="./data/cached_data.pkl", batch_size=128, device=torch.device("cpu")):
+    """
+    Loads the CIFAR-10 dataset and caches it for future use
+    or loads the cached data if it exists
+
+    :param cache_path: Path to the cache file
+    :param batch_size: The batch size for the DataLoader
+    :param device: The device to use for the model
+    :return: Train and test features and labels
+    """
     # Check if cached data exists
     if os.path.exists(cache_path):
         print("Loading data from cache...")
