@@ -54,13 +54,18 @@ class ConvolutionNeuralNetwork(NeuralNetwork):
             nn.MaxPool2d(2)
         )
 
+        # Add an extra layer
         if layer_addition:
-            self.features.add_module("extra_conv", nn.Conv2d(512, 512, kernel_size, padding=padding))
-            self.features.add_module("extra_bn", nn.BatchNorm2d(512))
-            self.features.add_module("extra_relu", nn.ReLU(True))
+            self.features = nn.Sequential(
+                *list(self.features.children()),
+                nn.Conv2d(512, 512, kernel_size, padding=padding),
+                nn.BatchNorm2d(512),
+                nn.ReLU(True)
+            )
 
+        # Remove the last layer
         if layer_removal:
-            feature_layers = list(self.features.children())[:-3]
+            feature_layers = list(self.features.children())[:-4]
             self.features = nn.Sequential(*feature_layers)
 
         # Original classifier
@@ -74,24 +79,14 @@ class ConvolutionNeuralNetwork(NeuralNetwork):
             nn.Linear(4096, 10)
         )
 
-        # Adjust classifier based on layer_addition or layer_removal
-        if layer_addition:
-            self.classifier = nn.Sequential(
-                nn.Linear(512, 4096),
-                nn.ReLU(True),
-                nn.Dropout(0.5),
-                nn.Linear(4096, 8192),
-                nn.ReLU(True),
-                nn.Dropout(0.5),
-                nn.Linear(8192, 4096),
-                nn.ReLU(True),
-                nn.Dropout(0.5),
-                nn.Linear(4096, 10)
-            )
-
+        # Adjust classifier based on layer_removal
+        # The input size multiplies by 4 times since 1 max pooling layer is removed, the depth is (2x2)
         if layer_removal:
             self.classifier = nn.Sequential(
                 nn.Linear(2048, 4096),
+                nn.ReLU(True),
+                nn.Dropout(0.5),
+                nn.Linear(4096, 4096),
                 nn.ReLU(True),
                 nn.Dropout(0.5),
                 nn.Linear(4096, 10)
