@@ -21,6 +21,7 @@ if __name__ == '__main__':
     os.makedirs(MODEL_DATA_PATH, exist_ok=True)
 
     # Set the device to GPU if available (mps is used for Apple Silicon processors)
+    # This has only been tested on mps since I own a macbook
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available()  else "cpu")
 
     # Load or cache the data
@@ -41,17 +42,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.model == "naive_bayes":
+        # Train and evaluate using my Gaussian Naive Bayes implementation
         model_runner.run_naive_bayes_model()
     elif args.model == "decision_tree":
+        # Train and evaluate using my Decision Tree implementation
         depth = args.max_depth
         model_runner.run_decision_tree_model(depth)
     elif args.model == "mlp":
+        # Train and evaluate using my Multi Layer Perceptron implementation
         num_epochs = args.epochs
         hidden_layer_size = args.hidden_layer_size
         layer_removal = args.layer_removal
         layer_addition = args.layer_addition
         model_runner.run_mlp_model(num_epochs, hidden_layer_size, layer_removal, layer_addition)
     elif args.model == "cnn":
+        # Train and evaluate using my Convolution Neural Network implementation
         num_epochs = args.epochs
         kernel_size = args.kernal_size
         layer_removal = args.layer_removal
@@ -62,6 +67,7 @@ if __name__ == '__main__':
         model_runner.run_naive_bayes_model()
 
         # Train and evaluate using sklearn's Gaussian Naive Bayes implementation
+        print("Training and evaluating sklearn's Gaussian Naive Bayes model...")
         model = GaussianNB()
         test_pred = model.fit(train_feature, train_labels).predict(test_features)
         model_runner.append_report(evaluate_model("SK GaussianNB model", test_labels, test_pred, classes, FIGURE_PATH))
@@ -72,6 +78,7 @@ if __name__ == '__main__':
             model_runner.run_decision_tree_model(depth)
 
         # Train and evaluate using sklearn's Decision Tree implementation
+        print("Training and evaluating sklearn's Decision Tree model with depth 50...")
         model = DecisionTreeClassifier(max_depth=50)
         test_pred = model.fit(train_feature, train_labels).predict(test_features)
         model_runner.append_report(evaluate_model("SK Decision Tree model with depth 50",test_labels, test_pred, classes, FIGURE_PATH))
@@ -85,7 +92,8 @@ if __name__ == '__main__':
         model_runner.run_mlp_model(num_epochs, 512, True, False)
         model_runner.run_mlp_model(num_epochs, 512, False, True)
 
-        num_epochs = 100
+        # Train and evaluate using my Convolution Neural Network implementation
+        num_epochs = 50
         kernel_sizes = [3, 5]
         for kernel_size in kernel_sizes:
            model_runner.run_cnn_model(num_epochs, kernel_size, False, False)
